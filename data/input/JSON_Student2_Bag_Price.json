@@ -1,0 +1,11 @@
+{
+    "data_base_name": "oracle_19c",
+    "key": ["ID"],
+    "type": "TXT",
+    "table_name" : "Student2_Bag_Price", 
+    "schema": "", 
+    "columns" : ["ID","Brand1", "Material", "M_Size", "Compartments", "Laptop_Compartment"],
+    "alias" : ["Brand", "Material", "M_Size", "Compartments", "Laptop_Compartment"],
+    "filter" : [],
+    "file_name": "Student1_Bag_Price"
+}

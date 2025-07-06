@@ -1,0 +1,11 @@
+{
+    "data_base_name": "oracle_19c",
+    "query": [
+                "SELECT id, Brand, Material, M_Size, Compartments, Laptop_Compartment",
+                "from Student_Bag_Price"
+
+    ],
+    "key": ["ID"],
+    "type": "SQL",
+    "file_name": "Student_Bag_Price"
+}

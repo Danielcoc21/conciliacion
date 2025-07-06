@@ -1,0 +1,9 @@
+{
+  "data_base_name": "azure_sql",
+  "type": "SQL",
+  "query": [
+    "SELECT id, nombre, correo, edad, activo FROM usuarios_destino"
+  ],
+  "key": ["id"],
+  "file_name": "usuarios_destino"
+}

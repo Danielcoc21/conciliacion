@@ -1,0 +1,5 @@
+
+[database.azure_sql]
+host = "databasereconciliacionprueba.database.windows.net"
+port = 1433
+service_name = "DBreconciliacion"
