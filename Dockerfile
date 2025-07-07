@@ -7,6 +7,15 @@ RUN apt-get update && apt-get install -y openjdk-17-jre-headless && rm -rf /var/
 # Instala dependencias del sistema para PySpark y pandas
 RUN apt-get update && apt-get install -y gcc g++ build-essential && rm -rf /var/lib/apt/lists/*
 
+# Instala ODBC y el driver de SQL Server (resuelve conflictos de paquetes)
+RUN apt-get update && \
+    apt-get install -y curl gnupg && \
+    curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.gpg && \
+    curl -sSL https://packages.microsoft.com/config/debian/11/prod.list -o /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc unixodbc-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 # Variables de entorno para Java y Spark
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PYSPARK_PYTHON=python3

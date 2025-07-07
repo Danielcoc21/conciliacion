@@ -9,6 +9,7 @@ from app.utils.spark import get_spark_session
 from dotenv import load_dotenv
 from app.services.report_service import mark_job_started, mark_job_finished, mark_job_failed
 from app.utils.azure_blob import upload_file_to_blob, download_blob_to_local
+from app.database import insert_ejecucion, generar_id_conciliacion
 
 logger = logging.getLogger("reconciliacion2.comparison")
 logging.basicConfig(level=logging.INFO)
@@ -110,6 +111,37 @@ def _compare_job(request, job_id):
         resumen_blob_url = upload_file_to_blob(resumen_path, container_name="resultadoscomparacion", job_id=job_id)
         logger.info(f"[{job_id}] Resumen ejecutivo subido a Azure Blob Storage: {resumen_blob_url}")
 
+        # Construir resumen tipo log datacompy usando compare.report()
+        resumen_texto = compare.report()
+        resumen_lines = [line for line in resumen_texto.splitlines() if line.startswith("INFO:datacompy.core:")]
+
+        # Construir resumen por columna con porcentajes y totales (usando las claves correctas)
+        column_stats_json = []
+        for col_stat in compare.column_stats:
+            col_name = col_stat.get("column")
+            match_cnt = col_stat.get("match_cnt")
+            unequal_cnt = col_stat.get("unequal_cnt")
+            total = None
+            percent = None
+            if match_cnt is not None and unequal_cnt is not None:
+                total = match_cnt + unequal_cnt
+                percent = round(100 * match_cnt / total, 2) if total > 0 else None
+            column_stats_json.append({
+                "columna": col_name,
+                "matches": match_cnt,
+                "total": total,
+                "percent": percent
+            })
+        # REGISTRO EN BASE DE DATOS
+        import json
+        id_conciliacion = generar_id_conciliacion()
+        resultado_comparacion = json.dumps({
+            "lines": resumen_lines,
+            "column_stats": column_stats_json
+        }, ensure_ascii=False, default=_json_default)
+        estado_ejecucion = "finished"
+        insert_ejecucion(id_conciliacion, resultado_comparacion, estado_ejecucion)
+
         # Guardar reporte detallado TXT
         detallado_path = os.path.join(output_dir, f"{file_name('comparacion_reporte_detallado')}.txt")
         with open(detallado_path, "w", encoding="utf-8") as f:
@@ -189,6 +221,11 @@ def _compare_job(request, job_id):
         mark_job_finished(job_id, resumen_path)
     except Exception as e:
         logger.error(f"[{job_id}] Error en comparación: {e}", exc_info=True)
+        # REGISTRO EN BASE DE DATOS EN CASO DE ERROR
+        id_conciliacion = generar_id_conciliacion()
+        resultado_comparacion = json.dumps({"error": str(e)})
+        estado_ejecucion = "error"
+        insert_ejecucion(id_conciliacion, resultado_comparacion, estado_ejecucion)
         mark_job_failed(job_id, "Error en comparación (detalles internos ocultos por seguridad)")
         with open(f"data/output/{job_id}_error.txt", "a") as f:
-            f.write("Error interno\n")
+            f.write("Error interno\n")
